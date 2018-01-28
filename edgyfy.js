@@ -35,10 +35,10 @@ delete window.browser;
 
 
 window.elib = {};
-window.elib.tripatch = (patcher) => {
-    patcher(Element.prototype);
-    patcher(Document.prototype);
-    patcher(DocumentFragment.prototype);
+window.elib.hardAssert = (test, err) => {
+    if (!test) {
+        throw err;
+    }
 };
 window.elib.tricheck = (prop) => {
     return (
@@ -47,10 +47,10 @@ window.elib.tricheck = (prop) => {
         typeof DocumentFragment.prototype[prop] === "function"
     );
 };
-window.elib.hardAssert = (test, err) => {
-    if (!test) {
-        throw err;
-    }
+window.elib.tripatch = (patcher) => {
+    patcher(Element.prototype);
+    patcher(Document.prototype);
+    patcher(DocumentFragment.prototype);
 };
 
 
@@ -59,7 +59,7 @@ window.ecfg.dateStripMarks = true;
 window.ecfg.fetchAware = false;
 
 
-(() => {
+{
     const reMarks = /\u200E|\u200F/g;
     const _toLocaleString = Date.prototype.toLocaleString;
     Date.prototype.toLocaleString = function (...args) {
@@ -72,7 +72,7 @@ window.ecfg.fetchAware = false;
         }
         return temp;
     };
-})();
+}
 try {
     const nodes = document.querySelectorAll("html");
     for (let node of nodes) { // Throws until 40, fixed in 41
@@ -89,7 +89,7 @@ try {
 }
 if (!elib.tricheck("prepend")) {
     elib.tripatch((ptype) => {
-        ptype.prepend = function () {
+        ptype.prepend = function () { // Missing as of 41
             let docFrag = document.createDocumentFragment();
             for (let arg of arguments) {
                 if (arg instanceof Node) {
@@ -104,7 +104,7 @@ if (!elib.tricheck("prepend")) {
 }
 if (!elib.tricheck("append")) {
     elib.tripatch((ptype) => {
-        ptype.append = function () {
+        ptype.append = function () { // Missing as of 41
             let docFrag = document.createDocumentFragment();
             for (let arg of arguments) {
                 if (arg instanceof Node) {
@@ -120,18 +120,18 @@ if (!elib.tricheck("append")) {
 
 
 if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
-    const _reload = (tabId, reloadProperties, callback) => { // Missing as of 41
+    const _reload = (tabId, reloadProperties, callback) => {
         elib.hardAssert(
             typeof tabId === "undefined" || typeof tabId === "number",
-            "chrome.tabs.reload: Invalid type for tabId",
+            "Uncaught TypeError: Invalid type for tabId",
         );
         elib.hardAssert(
             typeof reloadProperties === "undefined" || typeof reloadProperties === "object",
-            "chrome.tabs.reload: Invalid type for reloadProperties",
+            "Uncaught TypeError: Invalid type for reloadProperties",
         );
         elib.hardAssert(
             reloadProperties !== null,
-            "chrome.tabs.reload: Invalid type for reloadProperties",
+            "Uncaught TypeError: Invalid type for reloadProperties",
         );
         if (reloadProperties) {
             for (let key in reloadProperties) {
@@ -140,13 +140,13 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
                         case "bypassCache":
                             elib.hardAssert(
                                 typeof reloadProperties.bypassCache === "boolean",
-                                "chrome.tabs.reload: Invalid type for reloadProperties.bypassCache",
+                                "Uncaught TypeError: Invalid type for reloadProperties.bypassCache",
                             );
                             break;
                         default:
                             elib.hardAssert(
                                 false,
-                                "chrome.tabs.reload: Unexpected key in reloadProperties",
+                                "Uncaught TypeError: Unexpected key in reloadProperties",
                             );
                             break;
                     }
@@ -155,7 +155,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
         }
         elib.hardAssert(
             typeof callback === "undefined" || typeof callback === "function",
-            "chrome.tabs.reload: Invalid type for callback",
+            "Uncaught TypeError: Invalid type for callback",
         );
         let bypassCache = reloadProperties && reloadProperties.bypassCache;
         bypassCache = String(Boolean(bypassCache));
@@ -177,15 +177,15 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             chrome.tabs.executeScript(details, cbfn);
         }
     };
-    chrome.tabs.reload = (...args) => {
+    chrome.tabs.reload = (...args) => { // Missing as of 41
         try {
             return _reload(...args);
         } catch (err) {
-            console.warn(err);
+            console.warn("chrome.tabs.reload: Crash prevented\n", err);
         }
     };
 }
-(() => {
+{
     const reIsNumber = /^\d+$/;
     const _setIcon = chrome.browserAction.setIcon;
     chrome.browserAction.setIcon = (details, callback) => {
@@ -211,7 +211,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             console.warn("chrome.browserAction.setIcon: Crash prevented\n", err);
         }
     };
-})();
+}
 if (chrome.webRequest) {
     chrome.webRequest.ResourceType = {
         "MAIN_FRAME": "main_frame",
@@ -229,7 +229,7 @@ if (chrome.webRequest) {
         // "WEBSOCKET": "websocket", // Not available as of 41
         "OTHER": "other",
     };
-    (() => {
+    {
         let canFilterFetch = null;
         let failCount = 0;
         const _addListener = chrome.webRequest.onBeforeRequest.addListener;
@@ -270,8 +270,8 @@ if (chrome.webRequest) {
                 console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
             }
         };
-    })();
-    (() => {
+    }
+    {
         const _addListener = chrome.webRequest.onBeforeSendHeaders.addListener;
         chrome.webRequest.onBeforeSendHeaders.addListener = (callback, filter, opt_extraInfoSpec) => {
             try {
@@ -280,5 +280,5 @@ if (chrome.webRequest) {
                 console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
             }
         };
-    })();
+    }
 }

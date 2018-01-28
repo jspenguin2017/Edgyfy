@@ -2,7 +2,7 @@
 
 A shim to make Chromium extensions to run on Edge
 
-## Reserved Namespaces
+## Namespaces
 
 `window.edge`: Original `window.chrome` if it exists, an empty object otherwise.
 
@@ -10,10 +10,18 @@ A shim to make Chromium extensions to run on Edge
 
 `window.ecfg`: Configuration flags.
 
-## Unpatched Differences
+## Caveats
 
 *Note: `triptype` means all of `window.Element.prototype`,
 `window.Document.prototype`, and `window.DocumentFragment.prototype`.*
+
+You still need to work out the manifest, using `-ms-preload` is recommended:
+```JSON
+"-ms-preload": {
+  "backgroundScript": "edgyfy.js",
+  "contentScript": "edgyfy.js"
+}
+```
 
 Polyfilled and patched extension APIs *may* not validate your inputs, it's up
 to you to make sure your extension works on Chromium first.
