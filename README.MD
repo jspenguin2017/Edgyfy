@@ -1,19 +1,19 @@
 # Edgyfy
 
-A shim to make Chromium extensions run on Edge
+A shim to make Chromium extensions to run on Edge
 
 ## Reserved Namespaces
 
-`window.edge`: Original content of `window.chrome`.
+`window.edge`: Original `window.chrome` if it exists, an empty object otherwise.
 
-`window.elib`: internal tools for patching Edge APIs.
+`window.elib`: Internal tools for patching Edge APIs.
 
-`window.econfig`: configuration flags.
+`window.econfig`: Configuration flags.
 
-## Omitted Differences
+## Unpatched Differences
 
-`triptype` means all of `window.Element.prototype`, `window.Document.prototype`,
-and `window.DocumentFragment.prototype`.
+*Note: `triptype` means all of `window.Element.prototype`,
+`window.Document.prototype`, and `window.DocumentFragment.prototype`.*
 
 On Edge 40, `triptype.querySelectorAll` will return a modifiable array instead
 of a `StaticNodeList`. If your code (tries to) modify a `StaticNodeList` then
