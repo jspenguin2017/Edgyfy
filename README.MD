@@ -8,7 +8,7 @@ A shim to make Chromium extensions to run on Edge
 
 `window.elib`: Internal tools for patching Edge APIs.
 
-`window.econfig`: Configuration flags.
+`window.ecfg`: Configuration flags.
 
 ## Unpatched Differences
 
@@ -31,7 +31,7 @@ used, may be implemented in the future if there is a need for it.
 
 ## Configuration
 
-*Note: These configuration flags are under `window.econfig`.*
+*Note: These configuration flags are under `window.ecfg`.*
 
 `dateStripMarks` (Default `true`): When set to true, `\u200E` and `\u200F` are
 stripped from return value of `Date.prototype.toLocaleString`.

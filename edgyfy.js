@@ -36,9 +36,16 @@ delete window.browser;
 
 window.elib = {};
 window.elib.tripatch = (patcher) => {
-    patcher(window.Element.prototype);
-    patcher(window.Document.prototype);
-    patcher(window.DocumentFragment.prototype);
+    patcher(Element.prototype);
+    patcher(Document.prototype);
+    patcher(DocumentFragment.prototype);
+};
+window.elib.tricheck = (prop) => {
+    return (
+        typeof Element.prototype[prop] === "function" &&
+        typeof Document.prototype[prop] === "function" &&
+        typeof DocumentFragment.prototype[prop] === "function"
+    );
 };
 window.elib.hardAssert = (test, err) => {
     if (!test) {
@@ -47,52 +54,82 @@ window.elib.hardAssert = (test, err) => {
 };
 
 
-window.econfig = {};
-window.econfig.dateStripMarks = true;
-window.econfig.fetchAware = false;
+window.ecfg = {};
+window.ecfg.dateStripMarks = true;
+window.ecfg.fetchAware = false;
 
 
 (() => {
     const reMarks = /\u200E|\u200F/g;
-    const _toLocaleString = window.Date.prototype.toLocaleString;
-    window.Date.prototype.toLocaleString = function (...args) {
+    const _toLocaleString = Date.prototype.toLocaleString;
+    Date.prototype.toLocaleString = function (...args) {
         if (args[0] === "fullwide") { // "fullwide" throws as of 41
             args.shift();
         }
         let temp = _toLocaleString.apply(this, args);
-        if (window.econfig.dateStripMarks) {
+        if (ecfg.dateStripMarks) {
             temp = temp.replace(reMarks, ""); // Chromium does not insert those marks
         }
         return temp;
     };
 })();
 try {
-    const nodes = window.document.querySelectorAll("html");
+    const nodes = document.querySelectorAll("html");
     for (let node of nodes) { // Throws until 40, fixed in 41
         void node;
     }
 } catch (err) {
-    window.elib.tripatch((ptype) => {
+    elib.tripatch((ptype) => {
         const _querySelectorAll = ptype.querySelectorAll;
         ptype.querySelectorAll = function () {
             let result = _querySelectorAll.apply(this, arguments);
-            return window.Array.prototype.slice.call(result);
+            return Array.prototype.slice.call(result);
+        };
+    });
+}
+if (!elib.tricheck("prepend")) {
+    elib.tripatch((ptype) => {
+        ptype.prepend = function () {
+            let docFrag = document.createDocumentFragment();
+            for (let arg of arguments) {
+                if (arg instanceof Node) {
+                    docFrag.appendChild(arg);
+                } else {
+                    docFrag.appendChild(document.createTextNode(String(argItem)));
+                }
+            }
+            this.insertBefore(docFrag, this.firstChild);
+        };
+    });
+}
+if (!elib.tricheck("append")) {
+    elib.tripatch((ptype) => {
+        ptype.append = function () {
+            let docFrag = document.createDocumentFragment();
+            for (let arg of arguments) {
+                if (arg instanceof Node) {
+                    docFrag.appendChild(arg);
+                } else {
+                    docFrag.appendChild(document.createTextNode(String(argItem)));
+                }
+            }
+            this.appendChild(docFrag);
         };
     });
 }
 
 
-if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
-    window.chrome.tabs.reload = (tabId, reloadProperties, callback) => { // Missing as of 41
-        window.elib.hardAssert(
+if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
+    const _reload = (tabId, reloadProperties, callback) => { // Missing as of 41
+        elib.hardAssert(
             typeof tabId === "undefined" || typeof tabId === "number",
             "chrome.tabs.reload: Invalid type for tabId",
         );
-        window.elib.hardAssert(
+        elib.hardAssert(
             typeof reloadProperties === "undefined" || typeof reloadProperties === "object",
             "chrome.tabs.reload: Invalid type for reloadProperties",
         );
-        window.elib.hardAssert(
+        elib.hardAssert(
             reloadProperties !== null,
             "chrome.tabs.reload: Invalid type for reloadProperties",
         );
@@ -101,13 +138,13 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
                 if (reloadProperties.hasOwnProperty(key)) {
                     switch (key) {
                         case "bypassCache":
-                            window.elib.hardAssert(
+                            elib.hardAssert(
                                 typeof reloadProperties.bypassCache === "boolean",
                                 "chrome.tabs.reload: Invalid type for reloadProperties.bypassCache",
                             );
                             break;
                         default:
-                            window.elib.hardAssert(
+                            elib.hardAssert(
                                 false,
                                 "chrome.tabs.reload: Unexpected key in reloadProperties",
                             );
@@ -116,14 +153,14 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
                 }
             }
         }
-        window.elib.hardAssert(
+        elib.hardAssert(
             typeof callback === "undefined" || typeof callback === "function",
             "chrome.tabs.reload: Invalid type for callback",
         );
         let bypassCache = reloadProperties && reloadProperties.bypassCache;
         bypassCache = String(Boolean(bypassCache));
         const details = {
-            code: ";window.location.reload(" + bypassCache + ");",
+            code: ";location.reload(" + bypassCache + ");",
             runAt: "document_start",
         };
         const cbfn = (...args) => {
@@ -135,16 +172,23 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
             }
         };
         if (typeof tabId === "number") {
-            window.chrome.tabs.executeScript(tabId, details, cbfn);
+            chrome.tabs.executeScript(tabId, details, cbfn);
         } else {
-            window.chrome.tabs.executeScript(details, cbfn);
+            chrome.tabs.executeScript(details, cbfn);
+        }
+    };
+    chrome.tabs.reload = (...args) => {
+        try {
+            return _reload(...args);
+        } catch (err) {
+            console.warn(err);
         }
     };
 }
 (() => {
     const reIsNumber = /^\d+$/;
-    const _setIcon = window.chrome.browserAction.setIcon;
-    window.chrome.browserAction.setIcon = (details, callback) => {
+    const _setIcon = chrome.browserAction.setIcon;
+    chrome.browserAction.setIcon = (details, callback) => {
         let largest = -1;
         for (let key in details.path) {
             if (reIsNumber.test(key)) {
@@ -161,11 +205,15 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
         details.path = { // Edge modifies this object
             "38": pathToLargest, // Edge does not care if the size is right
         };
-        return _setIcon(details, callback);
+        try {
+            return _setIcon(details, callback);
+        } catch (err) {
+            console.warn("chrome.browserAction.setIcon: Crash prevented\n", err);
+        }
     };
 })();
-if (window.chrome.webRequest) {
-    window.chrome.webRequest.ResourceType = {
+if (chrome.webRequest) {
+    chrome.webRequest.ResourceType = {
         "MAIN_FRAME": "main_frame",
         "SUB_FRAME": "sub_frame",
         "STYLESHEET": "stylesheet",
@@ -183,26 +231,30 @@ if (window.chrome.webRequest) {
     };
     (() => {
         let canFilterFetch = null;
-        const _addListener = window.chrome.webRequest.onBeforeRequest.addListener;
-        window.chrome.webRequest.onBeforeRequest.addListener = (callback, filter, opt_extraInfoSpec) => {
+        let failCount = 0;
+        const _addListener = chrome.webRequest.onBeforeRequest.addListener;
+        chrome.webRequest.onBeforeRequest.addListener = (callback, filter, opt_extraInfoSpec) => {
             if (canFilterFetch === null) {
                 const noopfn = () => { };
                 try {
-                    window.chrome.webRequest.onBeforeRequest.addListener(noopfn, {
+                    chrome.webRequest.onBeforeRequest.addListener(noopfn, {
                         urls: filter.urls,
                         types: ["fetch"],
                     }, opt_extraInfoSpec);
-                    window.chrome.webRequest.onBeforeRequest.removeListener(noopfn);
+                    chrome.webRequest.onBeforeRequest.removeListener(noopfn);
                     canFilterFetch = true;
                 } catch (err) {
-                    canFilterFetch = false;
+                    failCount++;
+                    if (failCount > 10) {
+                        canFilterFetch = false;
+                    }
                 }
             }
-            if (!window.econfig.fetchAware && canFilterFetch) {
-                if (filter.types && filter.types.includes("xmlhttprequest")) {
+            if (!ecfg.fetchAware) {
+                if (canFilterFetch && filter.types && filter.types.includes("xmlhttprequest")) {
                     filter.types.push("fetch");
                 }
-                if (!filter.types || filter.types.includes("fetch")) {
+                if (!filter.types || filter.types.includes("xmlhttprequest") || filter.types.includes("fetch")) {
                     const _callback = callback;
                     callback = (details) => {
                         if (details.type === "fetch") {
@@ -220,8 +272,8 @@ if (window.chrome.webRequest) {
         };
     })();
     (() => {
-        const _addListener = window.chrome.webRequest.onBeforeSendHeaders.addListener;
-        window.chrome.webRequest.onBeforeSendHeaders.addListener = (callback, filter, opt_extraInfoSpec) => {
+        const _addListener = chrome.webRequest.onBeforeSendHeaders.addListener;
+        chrome.webRequest.onBeforeSendHeaders.addListener = (callback, filter, opt_extraInfoSpec) => {
             try {
                 return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
