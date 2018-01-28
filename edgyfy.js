@@ -70,7 +70,7 @@ try {
         const _querySelectorAll = ptype.querySelectorAll;
         ptype.querySelectorAll = function () {
             let result = _querySelectorAll.apply(this, arguments);
-            return Array.prototype.slice.call(result);
+            return window.Array.prototype.slice.call(result);
         };
     });
 }
@@ -102,9 +102,12 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
             code: ";window.location.reload(" + bypassCache + ");",
             runAt: "document_start",
         };
-        const cbfn = () => {
+        const cbfn = (...args) => {
+            if (args.length) {
+                console.log("chrome.tabs.reload: Workaround callback arguments discarded\n", args);
+            }
             if (typeof callback === "function") {
-                callback();
+                return callback();
             }
         };
         if (typeof tabId === "number") {
@@ -165,7 +168,6 @@ if (window.chrome.webRequest) {
                 }
                 const _callback = callback;
                 callback = (details) => {
-                    details = Object.assign({}, details);
                     if (details.type === "fetch") {
                         details.type = "xmlhttprequest";
                     }
