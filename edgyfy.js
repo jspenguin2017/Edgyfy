@@ -163,7 +163,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             code: ";location.reload(" + bypassCache + ");",
             runAt: "document_start",
         };
-        const cbfn = (...args) => {
+        const _callback = (...args) => {
             if (args.length) {
                 console.log("chrome.tabs.reload: Workaround callback arguments discarded\n", args);
             }
@@ -172,9 +172,9 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             }
         };
         if (typeof tabId === "number") {
-            chrome.tabs.executeScript(tabId, details, cbfn);
+            chrome.tabs.executeScript(tabId, details, _callback);
         } else {
-            chrome.tabs.executeScript(details, cbfn);
+            chrome.tabs.executeScript(details, _callback);
         }
     };
     chrome.tabs.reload = (...args) => { // Missing as of 41
@@ -203,7 +203,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
         }
         const pathToLargest = details.path[String(largest)];
         details.path = { // Edge modifies this object
-            "38": pathToLargest, // Edge does not care if the size is right
+            "38": pathToLargest, // Edge does not care if the size is actually right but do care if the key name is right
         };
         try {
             return _setIcon(details, callback);
