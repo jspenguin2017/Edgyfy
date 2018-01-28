@@ -137,7 +137,7 @@ if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
         details.path = { // Edge modifies this object
             "38": pathToLargest, // Edge does not care if the size is right
         };
-        _setIcon(details, callback);
+        return _setIcon(details, callback);
     };
 })();
 if (window.chrome.webRequest) {
@@ -158,24 +158,40 @@ if (window.chrome.webRequest) {
         "OTHER": "other",
     };
     (() => {
+        let canFilterFetch = null;
         const _addListener = window.chrome.webRequest.onBeforeRequest.addListener;
         window.chrome.webRequest.onBeforeRequest.addListener = (callback, filter, opt_extraInfoSpec) => {
-            if (!window.econfig.fetchAware) {
-                if (filter && filter.types) {
+            if (canFilterFetch === null) {
+                const noopfn = () => { };
+                try {
+                    window.chrome.webRequest.onBeforeRequest.addListener(noopfn, {
+                        urls: filter.urls,
+                        types: ["fetch"],
+                    }, opt_extraInfoSpec);
+                    window.chrome.webRequest.onBeforeRequest.removeListener(noopfn);
+                    canFilterFetch = true;
+                } catch (err) {
+                    canFilterFetch = false;
+                }
+            }
+            if (!window.econfig.fetchAware && canFilterFetch) {
+                if (filter.types) {
                     if (filter.types.includes("xmlhttprequest")) {
                         filter.types.push("fetch");
                     }
                 }
-                const _callback = callback;
-                callback = (details) => {
-                    if (details.type === "fetch") {
-                        details.type = "xmlhttprequest";
-                    }
-                    return _callback(details);
-                };
+                if (!filter.types || filter.types.includes("fetch")) {
+                    const _callback = callback;
+                    callback = (details) => {
+                        if (details.type === "fetch") {
+                            details.type = "xmlhttprequest";
+                        }
+                        return _callback(details);
+                    };
+                }
             }
             try {
-                _addListener(callback, filter, opt_extraInfoSpec);
+                return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
             }
@@ -185,7 +201,7 @@ if (window.chrome.webRequest) {
         const _addListener = window.chrome.webRequest.onBeforeSendHeaders.addListener;
         window.chrome.webRequest.onBeforeSendHeaders.addListener = (callback, filter, opt_extraInfoSpec) => {
             try {
-                _addListener(callback, filter, opt_extraInfoSpec);
+                return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
             }
