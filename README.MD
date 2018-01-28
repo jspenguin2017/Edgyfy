@@ -22,9 +22,16 @@ chances are your code is bugged.
 Polyfilled and patched extension APIs *may not* validate your inputs, it's up
 to you to make sure your extension works on Chromium first.
 
+`chrome.webRequest.onBeforeRequest.removeListener` will not work unless you
+specifies that your extension is aware of `fetch` type. This function is rarely
+used, may be implemented in the future if there is a real need for it.
+
 ## Configuration
 
 All these configuration flags are under `window.econfig`.
 
-`dateStripMarks` (Default `true`): When set to true, \u200E and \u200F are
+`dateStripMarks` (Default `true`): When set to true, `\u200E` and `\u200F` are
 stripped from return value of `Date.prototype.toLocaleString`.
+
+`fetchAware` (Default `false`): When set to true, listener for
+`chrome.webRequest.onBeforeRequest` will no loger be wrapped.
