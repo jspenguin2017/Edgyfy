@@ -15,7 +15,8 @@ A shim to make Chromium extensions to run on Edge
 *Note: `triptype` means all of `window.Element.prototype`,
 `window.Document.prototype`, and `window.DocumentFragment.prototype`.*
 
-You still need to work out the manifest, using `-ms-preload` is recommended:
+The minimum supported Edge version is 40, you still need to work out the
+manifest, using `-ms-preload` is recommended:
 ```JSON
 "-ms-preload": {
   "backgroundScript": "edgyfy.js",
@@ -26,16 +27,18 @@ You still need to work out the manifest, using `-ms-preload` is recommended:
 Polyfilled and patched extension APIs *may* not validate your inputs, it's up
 to you to make sure your extension works on Chromium first.
 
-On Edge 40 and below, `triptype.querySelectorAll` will return a modifiable array
-instead of a `StaticNodeList`. If your code (tries to) modify a `StaticNodeList`
-then chances are your code is bugged.
+On Edge 40, `triptype.querySelectorAll` will return a modifiable array instead
+of a `StaticNodeList`. If your code (tries to) modify a `StaticNodeList` then
+chances are your code is bugged.
 
-`chrome.webRequest.ResourceType` will always include `FETCH` no matter if it is
-actually supported.
+`chrome.webRequest.ResourceType` will always include `FETCH` regardless whether
+it is actually supported.
 
 `chrome.webRequest.onBeforeRequest.removeListener` will not work unless you
 specifies that your extension is aware of `fetch` type. This function is rarely
 used, may be implemented in the future if there is a need for it.
+
+Many other shims are missing and will be added as needed.
 
 ## Configuration
 
