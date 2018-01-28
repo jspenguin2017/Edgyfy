@@ -24,6 +24,7 @@ SOFTWARE.
 
 *******************************************************************************/
 
+
 "use strict";
 
 
@@ -38,6 +39,11 @@ window.elib.tripatch = (patcher) => {
     patcher(window.Element.prototype);
     patcher(window.Document.prototype);
     patcher(window.DocumentFragment.prototype);
+};
+window.elib.hardAssert = (test, err) => {
+    if (!test) {
+        throw err;
+    }
 };
 
 
@@ -78,24 +84,42 @@ try {
 
 if (window.chrome.tabs && typeof window.chrome.tabs.reload !== "function") {
     window.chrome.tabs.reload = (tabId, reloadProperties, callback) => { // Missing as of 41
-        console.assert(typeof tabId === "undefined" || typeof tabId === "number", "chrome.tabs.reload: Invalid type for tabId");
-        console.assert(typeof reloadProperties === "undefined" || typeof reloadProperties === "object", "chrome.tabs.reload: Invalid type for reloadProperties");
-        console.assert(reloadProperties !== null, "chrome.tabs.reload: Invalid type for reloadProperties");
+        window.elib.hardAssert(
+            typeof tabId === "undefined" || typeof tabId === "number",
+            "chrome.tabs.reload: Invalid type for tabId",
+        );
+        window.elib.hardAssert(
+            typeof reloadProperties === "undefined" || typeof reloadProperties === "object",
+            "chrome.tabs.reload: Invalid type for reloadProperties",
+        );
+        window.elib.hardAssert(
+            reloadProperties !== null,
+            "chrome.tabs.reload: Invalid type for reloadProperties",
+        );
         if (reloadProperties) {
             for (let key in reloadProperties) {
                 if (reloadProperties.hasOwnProperty(key)) {
                     switch (key) {
                         case "bypassCache":
-                            console.assert(typeof reloadProperties.bypassCache === "boolean", "chrome.tabs.reload: Invalid type for reloadProperties.bypassCache");
+                            window.elib.hardAssert(
+                                typeof reloadProperties.bypassCache === "boolean",
+                                "chrome.tabs.reload: Invalid type for reloadProperties.bypassCache",
+                            );
                             break;
                         default:
-                            console.assert(false, "chrome.tabs.reload: Unexpected key in reloadProperties");
+                            window.elib.hardAssert(
+                                false,
+                                "chrome.tabs.reload: Unexpected key in reloadProperties",
+                            );
                             break;
                     }
                 }
             }
         }
-        console.assert(typeof callback === "undefined" || typeof callback === "function", "chrome.tabs.reload: Invalid type for callback");
+        window.elib.hardAssert(
+            typeof callback === "undefined" || typeof callback === "function",
+            "chrome.tabs.reload: Invalid type for callback",
+        );
         let bypassCache = reloadProperties && reloadProperties.bypassCache;
         bypassCache = String(Boolean(bypassCache));
         const details = {
@@ -175,10 +199,8 @@ if (window.chrome.webRequest) {
                 }
             }
             if (!window.econfig.fetchAware && canFilterFetch) {
-                if (filter.types) {
-                    if (filter.types.includes("xmlhttprequest")) {
-                        filter.types.push("fetch");
-                    }
+                if (filter.types && filter.types.includes("xmlhttprequest")) {
+                    filter.types.push("fetch");
                 }
                 if (!filter.types || filter.types.includes("fetch")) {
                     const _callback = callback;
