@@ -135,4 +135,30 @@ if (typeof window.chrome.tabs.reload !== "function") {
         };
         _setIcon(details, callback);
     };
-});
+})();
+window.chrome.webRequest.ResourceType = {
+    "MAIN_FRAME": "main_frame",
+    "SUB_FRAME": "sub_frame",
+    "STYLESHEET": "stylesheet",
+    "SCRIPT": "script",
+    "IMAGE": "image",
+    // "FONT": "font", // Not available as of 41
+    "OBJECT": "object",
+    "XMLHTTPREQUEST": "xmlhttprequest",
+    "FETCH": "fetch", // Not available as of 40, available in 41, but not Chromium
+    "PING": "ping",
+    // "CSP_REPORT": "csp_report", // Not available as of 41
+    // "MEDIA": "media", // Not available as of 41
+    // "WEBSOCKET": "websocket", // Not available as of 41
+    "OTHER": "other",
+};
+(() => {
+    const _onBeforeSendHeaders = window.chrome.webRequest.onBeforeSendHeaders;
+    window.chrome.webRequest.onBeforeSendHeaders = (callback, filter, opt_extraInfoSpec) => {
+        try {
+            _onBeforeSendHeaders(callback, filter, opt_extraInfoSpec);
+        } catch (err) {
+            console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
+        }
+    };
+})();
