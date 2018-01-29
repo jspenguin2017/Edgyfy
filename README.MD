@@ -12,8 +12,8 @@ A shim to make Chromium extensions to run on Edge
 
 ## Caveats
 
-*Note: `triptype` means all of `window.Element.prototype`,
-`window.Document.prototype`, and `window.DocumentFragment.prototype`.*
+*Note: `triptype` means all of `Element.prototype`, `Document.prototype`,
+and `DocumentFragment.prototype`.*
 
 The minimum supported Edge version is 40, you still need to work out the
 manifest, using `-ms-preload` is recommended:
