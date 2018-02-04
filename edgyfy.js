@@ -30,8 +30,6 @@ SOFTWARE.
 
 window.edge = window.chrome || {};
 window.chrome = window.browser;
-window.browser = undefined;
-delete window.browser;
 
 
 window.elib = {};
@@ -51,6 +49,14 @@ window.elib.tripatch = (patcher) => {
     patcher(Element.prototype);
     patcher(Document.prototype);
     patcher(DocumentFragment.prototype);
+};
+window.elib.cpatch = (parent, name, value) => {
+    Object.defineProperty(parent, name, {
+        configurable: true,
+        enumerable: true,
+        writable: false,
+        value: value,
+    });
 };
 
 
@@ -177,18 +183,18 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             chrome.tabs.executeScript(details, _callback);
         }
     };
-    chrome.tabs.reload = (...args) => { // Missing as of 41
+    elib.cpatch(chrome.tabs, "reload", (...args) => { // Missing as of 41
         try {
             return _reload(...args);
         } catch (err) {
             console.warn("chrome.tabs.reload: Crash prevented\n", err);
         }
-    };
+    });
 }
-{
+if (chrome.browserAction) {
     const reIsNumber = /^\d+$/;
     const _setIcon = chrome.browserAction.setIcon;
-    chrome.browserAction.setIcon = (details, callback) => {
+    elib.cpatch(chrome.browserAction, "setIcon", (details, callback) => {
         let largest = -1;
         for (let key in details.path) {
             if (reIsNumber.test(key)) {
@@ -210,10 +216,10 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
         } catch (err) {
             console.warn("chrome.browserAction.setIcon: Crash prevented\n", err);
         }
-    };
+    });
 }
 if (chrome.webRequest) {
-    chrome.webRequest.ResourceType = {
+    elib.cpatch(chrome.webRequest, "ResourceType", {
         "MAIN_FRAME": "main_frame",
         "SUB_FRAME": "sub_frame",
         "STYLESHEET": "stylesheet",
@@ -228,12 +234,12 @@ if (chrome.webRequest) {
         // "MEDIA": "media", // Not available as of 41
         // "WEBSOCKET": "websocket", // Not available as of 41
         "OTHER": "other",
-    };
+    });
     {
         let canFilterFetch = null;
         let failCount = 0;
         const _addListener = chrome.webRequest.onBeforeRequest.addListener;
-        chrome.webRequest.onBeforeRequest.addListener = (callback, filter, opt_extraInfoSpec) => {
+        elib.cpatch(chrome.webRequest.onBeforeRequest, "addListener", (callback, filter, opt_extraInfoSpec) => {
             if (canFilterFetch === null) {
                 const noopfn = () => { };
                 try {
@@ -269,16 +275,16 @@ if (chrome.webRequest) {
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
             }
-        };
+        });
     }
     {
         const _addListener = chrome.webRequest.onBeforeSendHeaders.addListener;
-        chrome.webRequest.onBeforeSendHeaders.addListener = (callback, filter, opt_extraInfoSpec) => {
+        elib.cpatch(chrome.webRequest.onBeforeSendHeaders, "addListener", (callback, filter, opt_extraInfoSpec) => {
             try {
                 return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
             }
-        };
+        });
     }
 }
