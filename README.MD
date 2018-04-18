@@ -6,7 +6,7 @@ A shim to make Chromium extensions to run on Edge
 
 `window.edge`: Original `window.chrome` if it exists, an empty object otherwise.
 
-`window.elib`: Internal tools for patching Edge APIs.
+`window.elib`: Tools for patching Edge APIs, mostly internal.
 
 `window.ecfg`: Configuration flags.
 
@@ -23,6 +23,8 @@ manifest, using `-ms-preload` is recommended:
   "contentScript": "edgyfy.js"
 }
 ```
+
+If your popup pane is behaving weird, pleasy run `elib.unbreak_popup();`.
 
 Polyfilled and patched extension APIs *may* not validate your inputs, it's up
 to you to make sure your extension works on Chromium first.

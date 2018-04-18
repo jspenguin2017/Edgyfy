@@ -58,6 +58,11 @@ window.elib.cpatch = (parent, name, value) => {
         value: value,
     });
 };
+window.elib.unbreak_popup = () => {
+    const style = document.createElement("style")
+    style.innerHTML = "body { width: 100%; }";
+    document.documentElement.prepend(style);
+};
 
 
 window.ecfg = {};
