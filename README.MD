@@ -24,7 +24,7 @@ manifest, using `-ms-preload` is recommended:
 }
 ```
 
-If your popup pane is behaving weird, pleasy run `elib.unbreak_popup();`.
+If your popup pane is behaving weird, please call `elib.unbreak_popup();`.
 
 Polyfilled and patched extension APIs *may* not validate your inputs, it's up
 to you to make sure your extension works on Chromium first.
