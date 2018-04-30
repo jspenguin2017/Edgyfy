@@ -86,15 +86,15 @@ window.ecfg.fetchAware = false;
 }
 try {
     const nodes = document.querySelectorAll("html");
-    for (let node of nodes) { // Throws until 40, fixed in 41
+    for (const node of nodes) { // Throws until 40, fixed in 41
         void node;
     }
 } catch (err) {
     elib.tripatch((ptype) => {
         const _querySelectorAll = ptype.querySelectorAll;
         ptype.querySelectorAll = function () {
-            let result = _querySelectorAll.apply(this, arguments);
-            return Array.prototype.slice.call(result);
+            const result = _querySelectorAll.apply(this, arguments);
+            return Array.from(result);
         };
     });
 }
@@ -102,7 +102,7 @@ if (!elib.tricheck("prepend")) {
     elib.tripatch((ptype) => {
         ptype.prepend = function () { // Missing as of 41
             let docFrag = document.createDocumentFragment();
-            for (let arg of arguments) {
+            for (const arg of arguments) {
                 if (arg instanceof Node) {
                     docFrag.appendChild(arg);
                 } else {
@@ -117,7 +117,7 @@ if (!elib.tricheck("append")) {
     elib.tripatch((ptype) => {
         ptype.append = function () { // Missing as of 41
             let docFrag = document.createDocumentFragment();
-            for (let arg of arguments) {
+            for (const arg of arguments) {
                 if (arg instanceof Node) {
                     docFrag.appendChild(arg);
                 } else {
@@ -145,7 +145,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             "Uncaught TypeError: Invalid type for reloadProperties",
         );
         if (reloadProperties) {
-            for (let key in reloadProperties) {
+            for (const key in reloadProperties) {
                 if (reloadProperties.hasOwnProperty(key)) {
                     switch (key) {
                         case "bypassCache":
@@ -202,9 +202,9 @@ if (chrome.browserAction) {
     const _setIcon = chrome.browserAction.setIcon;
     elib.cpatch(chrome.browserAction, "setIcon", (details, callback) => {
         let largest = -1;
-        for (let key in details.path) {
+        for (const key in details.path) {
             if (reIsNumber.test(key)) {
-                let current = parseInt(key);
+                const current = parseInt(key);
                 if (isFinite(current) && current > largest) {
                     largest = current;
                 }
