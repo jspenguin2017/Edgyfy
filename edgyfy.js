@@ -193,6 +193,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             return _reload(...args);
         } catch (err) {
             console.warn("chrome.tabs.reload: Crash prevented\n", err);
+            debugger;
         }
     });
 }
@@ -220,6 +221,7 @@ if (chrome.browserAction) {
             return _setIcon(details, callback);
         } catch (err) {
             console.warn("chrome.browserAction.setIcon: Crash prevented\n", err);
+            debugger;
         }
     });
 }
@@ -248,7 +250,7 @@ if (chrome.webRequest) {
             if (canFilterFetch === null) {
                 const noopfn = () => { };
                 try {
-                    chrome.webRequest.onBeforeRequest.addListener(noopfn, {
+                    _addListener(noopfn, {
                         urls: filter.urls,
                         types: ["fetch"],
                     }, opt_extraInfoSpec);
@@ -279,6 +281,7 @@ if (chrome.webRequest) {
                 return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
+                debugger;
             }
         });
     }
@@ -289,6 +292,7 @@ if (chrome.webRequest) {
                 return _addListener(callback, filter, opt_extraInfoSpec);
             } catch (err) {
                 console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
+                debugger;
             }
         });
     }
