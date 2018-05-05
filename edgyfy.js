@@ -128,6 +128,33 @@ if (!elib.tricheck("append")) {
         };
     });
 }
+{
+    // Extension local storage is not functional as of 41
+    const _localStorage = localStorage;
+    Object.defineProperty(window, "localStorage", {
+        configurable: true,
+        enumerable: true,
+        writable: false,
+        value: {
+            getItem(...args) {
+                try {
+                    return _localStorage.getItem(...args);
+                } catch (err) {
+                    console.warn("localStorage.getItem: Crash prevented\n", err);
+                    debugger;
+                }
+            },
+            setItem(...args) {
+                try {
+                    return _localStorage.setItem(...args);
+                } catch (err) {
+                    console.warn("localStorage.setItem: Crash prevented\n", err);
+                    debugger;
+                }
+            },
+        },
+    });
+}
 
 
 if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
