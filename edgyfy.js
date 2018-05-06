@@ -130,7 +130,7 @@ if (!elib.tricheck("append")) {
     });
 }
 {
-    // Local storage is not functional for extensions as of 41
+    // localStorage is not functional for extensions as of 41
     const _localStorage = localStorage;
     let newLocalStorage = {};
 
@@ -277,54 +277,67 @@ if (chrome.webRequest) {
         let canFilterFetch = null;
         let failCount = 0;
         const _addListener = chrome.webRequest.onBeforeRequest.addListener;
-        elib.cpatch(chrome.webRequest.onBeforeRequest, "addListener", (callback, filter, opt_extraInfoSpec) => {
-            if (canFilterFetch === null) {
-                const noopfn = () => { };
-                try {
-                    _addListener(noopfn, {
-                        urls: filter.urls,
-                        types: ["fetch"],
-                    }, opt_extraInfoSpec);
-                    chrome.webRequest.onBeforeRequest.removeListener(noopfn);
-                    canFilterFetch = true;
-                } catch (err) {
-                    failCount++;
-                    if (failCount > 10) {
-                        canFilterFetch = false;
+        elib.cpatch(
+            chrome.webRequest.onBeforeRequest, "addListener",
+            (callback, filter, opt_extraInfoSpec) => {
+                if (canFilterFetch === null) {
+                    const noopfn = () => { };
+                    try {
+                        _addListener(noopfn, {
+                            urls: filter.urls,
+                            types: ["fetch"],
+                        }, opt_extraInfoSpec);
+                        chrome.webRequest.onBeforeRequest.removeListener(noopfn);
+                        canFilterFetch = true;
+                    } catch (err) {
+                        failCount++;
+                        if (failCount > 10) {
+                            canFilterFetch = false;
+                        }
                     }
                 }
-            }
-            if (!ecfg.fetchAware) {
-                if (canFilterFetch && filter.types && filter.types.includes("xmlhttprequest")) {
-                    filter.types.push("fetch");
+                if (!ecfg.fetchAware) {
+                    if (
+                        canFilterFetch && filter.types &&
+                        filter.types.includes("xmlhttprequest")
+                    ) {
+                        filter.types.push("fetch");
+                    }
+                    if (
+                        !filter.types ||
+                        filter.types.includes("xmlhttprequest") ||
+                        filter.types.includes("fetch")
+                    ) {
+                        const _callback = callback;
+                        callback = (details) => {
+                            if (details.type === "fetch") {
+                                details.type = "xmlhttprequest";
+                            }
+                            return _callback(details);
+                        };
+                    }
                 }
-                if (!filter.types || filter.types.includes("xmlhttprequest") || filter.types.includes("fetch")) {
-                    const _callback = callback;
-                    callback = (details) => {
-                        if (details.type === "fetch") {
-                            details.type = "xmlhttprequest";
-                        }
-                        return _callback(details);
-                    };
+                try {
+                    return _addListener(callback, filter, opt_extraInfoSpec);
+                } catch (err) {
+                    console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
+                    debugger;
                 }
-            }
-            try {
-                return _addListener(callback, filter, opt_extraInfoSpec);
-            } catch (err) {
-                console.warn("chrome.webRequest.onBeforeRequest: Crash prevented\n", err);
-                debugger;
-            }
-        });
+            },
+        );
     }
     {
         const _addListener = chrome.webRequest.onBeforeSendHeaders.addListener;
-        elib.cpatch(chrome.webRequest.onBeforeSendHeaders, "addListener", (callback, filter, opt_extraInfoSpec) => {
-            try {
-                return _addListener(callback, filter, opt_extraInfoSpec);
-            } catch (err) {
-                console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
-                debugger;
-            }
-        });
+        elib.cpatch(
+            chrome.webRequest.onBeforeSendHeaders, "addListener",
+            (callback, filter, opt_extraInfoSpec) => {
+                try {
+                    return _addListener(callback, filter, opt_extraInfoSpec);
+                } catch (err) {
+                    console.warn("chrome.webRequest.onBeforeSendHeaders: Crash prevented\n", err);
+                    debugger;
+                }
+            },
+        );
     }
 }
