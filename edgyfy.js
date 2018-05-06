@@ -79,7 +79,8 @@ window.ecfg.fetchAware = false;
         }
         let temp = _toLocaleString.apply(this, args);
         if (ecfg.dateStripMarks) {
-            temp = temp.replace(reMarks, ""); // Chromium does not insert those marks
+            // Chromium does not insert those marks
+            temp = temp.replace(reMarks, "");
         }
         return temp;
     };
@@ -129,30 +130,30 @@ if (!elib.tricheck("append")) {
     });
 }
 {
-    // Extension local storage is not functional as of 41
+    // Local storage is not functional for extensions as of 41
     const _localStorage = localStorage;
+    let newLocalStorage = {};
+
+    const wrap = (name) => {
+        return (...args) => {
+            try {
+                return _localStorage[name](...args);
+            } catch (err) {
+                console.warn("localStorage." + name + ": Crash prevented\n", err);
+                debugger;
+            }
+        };
+    };
+    const keys = ["clear", "getItem", "key", "removeItem", "setItem"];
+    for (const key of keys) {
+        newLocalStorage[key] = wrap(key);
+    }
+
     Object.defineProperty(window, "localStorage", {
         configurable: true,
         enumerable: true,
         writable: false,
-        value: {
-            getItem(...args) {
-                try {
-                    return _localStorage.getItem(...args);
-                } catch (err) {
-                    console.warn("localStorage.getItem: Crash prevented\n", err);
-                    debugger;
-                }
-            },
-            setItem(...args) {
-                try {
-                    return _localStorage.setItem(...args);
-                } catch (err) {
-                    console.warn("localStorage.setItem: Crash prevented\n", err);
-                    debugger;
-                }
-            },
-        },
+        value: newLocalStorage,
     });
 }
 
@@ -241,8 +242,11 @@ if (chrome.browserAction) {
             throw new Error("chrome.browserAction.setIcon: No reasonable icon path");
         }
         const pathToLargest = details.path[String(largest)];
-        details.path = { // Edge modifies this object
-            "38": pathToLargest, // Edge does not care if the size is actually right but do care if the key name is right
+        // Edge modifies this object
+        details.path = {
+            // Edge does not care if the size is actually right but do care if
+            // the key name is right
+            "38": pathToLargest,
         };
         try {
             return _setIcon(details, callback);
@@ -262,7 +266,7 @@ if (chrome.webRequest) {
         // "FONT": "font", // Not available as of 41
         "OBJECT": "object",
         "XMLHTTPREQUEST": "xmlhttprequest",
-        "FETCH": "fetch", // Not available as of 40, available in 41, but not Chromium
+        "FETCH": "fetch", // Available starting in 41, but not Chromium
         "PING": "ping",
         // "CSP_REPORT": "csp_report", // Not available as of 41
         // "MEDIA": "media", // Not available as of 41
