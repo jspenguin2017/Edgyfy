@@ -129,7 +129,7 @@ if (!elib.tricheck("append")) {
         };
     });
 }
-{
+try { // From health report, this seems to be crashing on Edge 42
     // localStorage is not functional for extensions as of 41
     const _localStorage = localStorage;
     let newLocalStorage = {};
@@ -155,6 +155,8 @@ if (!elib.tricheck("append")) {
         writable: false,
         value: newLocalStorage,
     });
+} catch (err) {
+    console.error(err);
 }
 
 
