@@ -1,6 +1,6 @@
 # Edgyfy
 
-A shim to make Chromium extensions to run on Edge
+Shim to make Chromium extensions to run on Edge
 
 ## Namespaces
 

@@ -22,22 +22,29 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-*******************************************************************************/
+********************************************************************************
 
+Edgyfy - Shim to make Chromium extensions to run on Edge
+
+*******************************************************************************/
 
 "use strict";
 
+/******************************************************************************/
 
 window.edge = window.chrome || {};
 window.chrome = window.browser;
 
+/******************************************************************************/
 
 window.elib = {};
+
 window.elib.hardAssert = (test, err) => {
     if (!test) {
         throw err;
     }
 };
+
 window.elib.tricheck = (prop) => {
     return (
         typeof Element.prototype[prop] === "function" &&
@@ -45,11 +52,14 @@ window.elib.tricheck = (prop) => {
         typeof DocumentFragment.prototype[prop] === "function"
     );
 };
+
 window.elib.tripatch = (patcher) => {
     patcher(Element.prototype);
     patcher(Document.prototype);
     patcher(DocumentFragment.prototype);
 };
+
+// For patching the chrome namespace
 window.elib.cpatch = (parent, name, value) => {
     Object.defineProperty(parent, name, {
         configurable: true,
@@ -58,17 +68,26 @@ window.elib.cpatch = (parent, name, value) => {
         value: value,
     });
 };
-window.elib.unbreak_popup = () => {
-    const style = document.createElement("style")
+
+window.elib.unbreak_popup = (extra) => {
+    const style = document.createElement("style");
+
     style.innerHTML = "body { width: 100%; }";
+    if (typeof extra === "string")
+        style.innerHTML = style.innerHTML + " " + extra;
+
     document.documentElement.prepend(style);
 };
 
+/******************************************************************************/
 
 window.ecfg = {};
+
 window.ecfg.dateStripMarks = true;
+
 window.ecfg.fetchAware = false;
 
+/******************************************************************************/
 
 {
     const reMarks = /\u200E|\u200F/g;
@@ -85,6 +104,7 @@ window.ecfg.fetchAware = false;
         return temp;
     };
 }
+
 try {
     const nodes = document.querySelectorAll("html");
     for (const node of nodes) { // Throws until 40, fixed in 41
@@ -99,6 +119,7 @@ try {
         };
     });
 }
+
 if (!elib.tricheck("prepend")) {
     elib.tripatch((ptype) => {
         ptype.prepend = function () { // Missing as of 41
@@ -114,6 +135,7 @@ if (!elib.tricheck("prepend")) {
         };
     });
 }
+
 if (!elib.tricheck("append")) {
     elib.tripatch((ptype) => {
         ptype.append = function () { // Missing as of 41
@@ -130,6 +152,7 @@ if (!elib.tricheck("append")) {
     });
 }
 
+/******************************************************************************/
 
 try {
     // From health report, this seems to be crashing on Edge 42
@@ -162,6 +185,7 @@ try {
     console.error(err);
 }
 
+/******************************************************************************/
 
 if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
     const _reload = (tabId, reloadProperties, callback) => {
@@ -170,7 +194,8 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             "Uncaught TypeError: Invalid type for tabId",
         );
         elib.hardAssert(
-            typeof reloadProperties === "undefined" || typeof reloadProperties === "object",
+            typeof reloadProperties === "undefined" ||
+            typeof reloadProperties === "object",
             "Uncaught TypeError: Invalid type for reloadProperties",
         );
         elib.hardAssert(
@@ -230,6 +255,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
         }
     });
 }
+
 if (chrome.browserAction) {
     const reIsNumber = /^\d+$/;
     const _setIcon = chrome.browserAction.setIcon;
@@ -261,6 +287,7 @@ if (chrome.browserAction) {
         }
     });
 }
+
 if (chrome.webRequest) {
     elib.cpatch(chrome.webRequest, "ResourceType", {
         "MAIN_FRAME": "main_frame",
@@ -346,3 +373,5 @@ if (chrome.webRequest) {
         );
     }
 }
+
+/******************************************************************************/
