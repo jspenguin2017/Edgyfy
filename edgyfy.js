@@ -246,7 +246,7 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
             chrome.tabs.executeScript(details, _callback);
         }
     };
-    elib.cpatch(chrome.tabs, "reload", (...args) => { // Missing as of 41
+    elib.cpatch(chrome.tabs, "reload", (...args) => { // Available starting 42
         try {
             return _reload(...args);
         } catch (err) {
