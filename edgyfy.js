@@ -93,23 +93,25 @@ window.ecfg.fetchAware = false;
     const reMarks = /\u200E|\u200F/g;
     const _toLocaleString = Date.prototype.toLocaleString;
     Date.prototype.toLocaleString = function (...args) {
-        if (args[0] === "fullwide") { // "fullwide" throws as of 41
+        // "fullwide" throws as of 41
+        if (args[0] === "fullwide")
             args.shift();
-        }
+
         let temp = _toLocaleString.apply(this, args);
-        if (ecfg.dateStripMarks) {
-            // Chromium does not insert those marks
+
+        // Chromium does not insert those marks
+        if (ecfg.dateStripMarks)
             temp = temp.replace(reMarks, "");
-        }
+
         return temp;
     };
 }
 
 try {
     const nodes = document.querySelectorAll("html");
-    for (const node of nodes) { // Throws until 40, fixed in 41
+    // Throws until 40, fixed in 41
+    for (const node of nodes)
         void node;
-    }
 } catch (err) {
     elib.tripatch((ptype) => {
         const _querySelectorAll = ptype.querySelectorAll;
@@ -120,9 +122,10 @@ try {
     });
 }
 
+// Missing as of 41
 if (!elib.tricheck("prepend")) {
     elib.tripatch((ptype) => {
-        ptype.prepend = function () { // Missing as of 41
+        ptype.prepend = function () {
             let docFrag = document.createDocumentFragment();
             for (const arg of arguments) {
                 if (arg instanceof Node) {
@@ -136,9 +139,10 @@ if (!elib.tricheck("prepend")) {
     });
 }
 
+// Missing as of 41
 if (!elib.tricheck("append")) {
     elib.tripatch((ptype) => {
-        ptype.append = function () { // Missing as of 41
+        ptype.append = function () {
             let docFrag = document.createDocumentFragment();
             for (const arg of arguments) {
                 if (arg instanceof Node) {
@@ -183,6 +187,24 @@ try {
     });
 } catch (err) {
     console.error(err);
+    debugger;
+}
+
+// ----------------------------------------------------------------------------------------------------------------- //
+
+if (!window.requestIdleCallback) {
+    window.requestIdleCallback = (callback, options) => {
+        let timeout = 0;
+
+        if (options && options.timeout)
+            timeout = options.timeout;
+
+        return setTimeout(callback, timeout);
+    };
+
+    window.cancelIdleCallback = (handle) => {
+        clearTimeout(handle);
+    };
 }
 
 // ----------------------------------------------------------------------------------------------------------------- //
