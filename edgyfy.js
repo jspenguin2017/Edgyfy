@@ -1,41 +1,41 @@
-﻿/*******************************************************************************
+﻿// ----------------------------------------------------------------------------------------------------------------- //
 
-MIT License
+// MIT License
+//
+// Copyright (c) 2018 Hugo Xu
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-Copyright (c) 2018 Hugo Xu
+// ----------------------------------------------------------------------------------------------------------------- //
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+// Edgyfy - Shim to make Chromium extensions to run on Edge
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-********************************************************************************
-
-Edgyfy - Shim to make Chromium extensions to run on Edge
-
-*******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 "use strict";
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 window.edge = window.chrome || {};
 window.chrome = window.browser;
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 window.elib = {};
 
@@ -79,7 +79,7 @@ window.elib.unbreak_popup = (extra) => {
     document.documentElement.prepend(style);
 };
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 window.ecfg = {};
 
@@ -87,7 +87,7 @@ window.ecfg.dateStripMarks = true;
 
 window.ecfg.fetchAware = false;
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 {
     const reMarks = /\u200E|\u200F/g;
@@ -152,7 +152,7 @@ if (!elib.tricheck("append")) {
     });
 }
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 try {
     // From health report, this seems to be crashing on Edge 42
@@ -185,7 +185,7 @@ try {
     console.error(err);
 }
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
 
 if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
     const _reload = (tabId, reloadProperties, callback) => {
@@ -374,4 +374,80 @@ if (chrome.webRequest) {
     }
 }
 
-/******************************************************************************/
+// ----------------------------------------------------------------------------------------------------------------- //
+
+// From: https://github.com/jonathantneal/element-qsa-scope/blob/master/index.js (public domain)
+
+try {
+    // test for scope support
+    document.querySelector(':scope *');
+} catch (error) {
+    (function (ElementPrototype) {
+        // scope regex
+        var scope = /:scope(?![\w-])/gi;
+
+        // polyfill Element#querySelector
+        var querySelectorWithScope = polyfill(ElementPrototype.querySelector);
+
+        ElementPrototype.querySelector = function querySelector(selectors) {
+            return querySelectorWithScope.apply(this, arguments);
+        };
+
+        // polyfill Element#querySelectorAll
+        var querySelectorAllWithScope = polyfill(ElementPrototype.querySelectorAll);
+
+        ElementPrototype.querySelectorAll = function querySelectorAll(selectors) {
+            return querySelectorAllWithScope.apply(this, arguments);
+        };
+
+        // polyfill Element#matches
+        if (ElementPrototype.matches) {
+            var matchesWithScope = polyfill(ElementPrototype.matches);
+
+            ElementPrototype.matches = function matches(selectors) {
+                return matchesWithScope.apply(this, arguments);
+            };
+        }
+
+        // polyfill Element#closest
+        if (ElementPrototype.closest) {
+            var closestWithScope = polyfill(ElementPrototype.closest);
+
+            ElementPrototype.closest = function closest(selectors) {
+                return closestWithScope.apply(this, arguments);
+            };
+        }
+
+        function polyfill(qsa) {
+            return function (selectors) {
+                // whether the selectors contain :scope
+                var hasScope = selectors && scope.test(selectors);
+
+                if (hasScope) {
+                    // fallback attribute
+                    var attr = 'q' + Math.floor(Math.random() * 9000000) + 1000000;
+
+                    // replace :scope with the fallback attribute
+                    arguments[0] = selectors.replace(scope, '[' + attr + ']');
+
+                    // add the fallback attribute
+                    this.setAttribute(attr, '');
+
+                    // results of the qsa
+                    var elementOrNodeList = qsa.apply(this, arguments);
+
+                    // remove the fallback attribute
+                    this.removeAttribute(attr);
+
+                    // return the results of the qsa
+                    return elementOrNodeList;
+                } else {
+                    // return the results of the qsa
+                    return qsa.apply(this, arguments);
+                }
+            };
+        }
+    })(Element.prototype);
+}
+
+// ----------------------------------------------------------------------------------------------------------------- //
