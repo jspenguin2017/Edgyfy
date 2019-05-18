@@ -193,13 +193,26 @@ try {
 // ----------------------------------------------------------------------------------------------------------------- //
 
 if (!window.requestIdleCallback) {
+    window.IdleDeadline = class {
+        constructor(noTimeout) {
+            this.didTimeout = false;
+
+            if (!noTimeout)
+                this.didTimeout = Math.random() > 0.9;
+        }
+
+        timeRemaining() {
+            return Math.random() * 10 + 45;
+        }
+    };
+
     window.requestIdleCallback = (callback, options) => {
         let timeout = 0;
 
         if (options && options.timeout)
             timeout = options.timeout;
 
-        return setTimeout(callback, timeout);
+        return setTimeout(callback, timeout, new IdleDeadline(timeout === 0));
     };
 
     window.cancelIdleCallback = (handle) => {
