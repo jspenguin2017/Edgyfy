@@ -291,6 +291,31 @@ if (chrome.tabs && typeof chrome.tabs.reload !== "function") {
     });
 }
 
+if (chrome.tabs && typeof chrome.tabs.executeScript === "function") {
+    const _executeScript = chrome.tabs.executeScript;
+    elib.cpatch(chrome.tabs, "executeScript", (tabId, details, callback) => {
+        try {
+            _executeScript(tabId, details, callback);
+        } catch (err) {
+            console.log("chrome.tabs.executeScript: Ignoring 'frameId'\n", err);
+
+            if (typeof tabId === "object") {
+                delete tabId.frameId;
+            } else if (typeof details === "object") {
+                delete details.frameId;
+            }
+
+            try {
+                _executeScript(tabId, details, callback);
+            } catch (err) {
+                // Give up
+                console.warn("chrome.tabs.executeScript: Crash prevented\n", err);
+                debugger;
+            }
+        }
+    });
+}
+
 if (chrome.browserAction) {
     const reIsNumber = /^\d+$/;
     const _setIcon = chrome.browserAction.setIcon;
