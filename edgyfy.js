@@ -434,6 +434,31 @@ if (chrome.webRequest) {
             },
         );
     }
+    {
+        const _addListener = chrome.webRequest.onHeadersReceived.addListener;
+        const acceptedTypes = new Set(Object.values(chrome.webRequest.ResourceType));
+        elib.cpatch(
+            chrome.webRequest.onHeadersReceived, "addListener",
+            (callback, filter, opt_extraInfoSpec) => {
+                const types = filter.types;
+                if (types) {
+                    let i = types.length;
+                    while (i--) {
+                        if (!acceptedTypes.has(types[i])) {
+                            console.warn("chrome.webRequest.onHeadersReceived: Type '" + types[i] + "' Discarded");
+                            types.splice(i, 1);
+                        }
+                    }
+                }
+                try {
+                    return _addListener(callback, filter, opt_extraInfoSpec);
+                } catch (err) {
+                    console.warn("chrome.webRequest.onHeadersReceived: Crash prevented\n", err);
+                    debugger;
+                }
+            },
+        );
+    }
 }
 
 // ----------------------------------------------------------------------------------------------------------------- //
